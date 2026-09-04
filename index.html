@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StoreFlow — Load, Bills & Services</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#165DFF',
+                        success: '#00B42A',
+                        danger: '#F53F3F',
+                        dark: '#1D2129',
+                        light: '#F2F3F5'
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .input-focus {
+                @apply focus:ring-2 focus:ring-primary/50 focus:border-primary;
+            }
+            .btn {
+                @apply px-4 py-2.5 rounded-lg font-medium transition-all duration-200;
+            }
+            .card {
+                @apply bg-white rounded-xl shadow-sm border border-gray-100 p-5;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans text-dark min-h-screen">
+    <header class="bg-white shadow-sm sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+            <h1 class="text-xl font-bold text-primary flex items-center gap-2">
+                <i class="fa-solid fa-store"></i>
+                StoreFlow
+            </h1>
+            <span class="text-sm text-gray-500" id="api-status">
+                <i class="fa-solid fa-circle-dot text-gray-400"></i> Checking API...
+            </span>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-4 py-6 space-y-6">
+        <!-- API Base URL Settings -->
+        <div class="card">
+            <label class="block text-sm font-medium text-gray-700 mb-1">API Base URL</label>
+            <div class="flex gap-2">
+                <input type="url" id="api-base-url" 
+                    class="flex-1 px-3 py-2 border border-gray-300 rounded-lg input-focus text-sm"
+                    placeholder="https://your-worker.workers.dev"
+                    value="">
+                <button onclick="saveApiUrl()" class="btn bg-primary text-white hover:bg-primary/90">
+                    <i class="fa-solid fa-save mr-1"></i> Save
+                </button>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">Enter your Cloudflare Worker URL above</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex flex-wrap gap-1 border-b border-gray-200">
+            <button data-tab="load" class="tab-btn active px-4 py-2.5 text-sm font-medium border-b-2 border-primary text-primary">
+                <i class="fa-solid fa-mobile-screen-button mr-1"></i> Buy Load
+            </button>
+            <button data-tab="game" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                <i class="fa-solid fa-gamepad mr-1"></i> Game PIN
+            </button>
+            <button data-tab="bills" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                <i class="fa-solid fa-file-invoice mr-1"></i> Bills Payment
+            </button>
+            <button data-tab="transactions" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                <i class="fa-solid fa-clock-rotate-left mr-1"></i> History
+            </button>
+        </div>
+
+        <!-- Tab Content: Buy Load -->
+        <div id="tab-load" class="tab-content card">
+            <h2 class="text-lg font-semibold mb-4">Buy E-Load</h2>
+            <form id="load-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Network Provider</label>
+                    <select name="network" required class="w-full px-3 py-2 border border-gray-300 rounded-lg input-focus">
+                        <option value="">-- Select Network --</option>
+                        <option value="Globe">Globe / TM</option>
+                        <option value="Smart">Smart / TNT</option>
+                        <option value="DITO">DITO Telecommunity</option>
+                        <option value="GOMO">GOMO</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Mobile Number</label>
+                    <input type="tel" name="phone_number" required 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg input-focus"
+                        placeholder="09171234567" pattern="^09\d{9}$">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Amount (₱)</label>
+                    <select name="amount" required class="w-full px-3 py-2 border border-gray-300 rounded-lg input-focus">
+                        <option value="">-- Select Amount --</option>
+                        <option value="10">₱10</option>
+                        <option value="20">₱20</option>
+                        <option value="30">₱30</option>
+                        <option value="50">₱50</option>
+                        <option value="100">₱100</option>
+                        <option value="200">₱200</option>
+                        <option value="300">₱300</option>
+                        <option value="500">₱500</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn w-full bg-primary text-white hover:bg-primary/90">
+                    <i class="fa-solid fa-paper-plane mr-2"></i> Send Load Request
+                </button>
+            </form>
+        </div>
+
+        <!-- Tab Content: Game PIN -->
+        <div id="tab-game" class="tab-content card hidden">
+            <h2 class="text-lg font-semibold mb-4">Buy Game PIN / Credits</h2>
+            <form id="game-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Game / Service</label>
+                    <select name="game_code" required class="w-full px-3 py-2 border border-gray-300 rounded-lg input-focus">
+                        <option value="">-- Select Game --</option>
+                        <option value="STEAM">Steam Wallet</option>
+                        <option value="MLBB">Mobile Legends</option>
+                        <option value="GARENA">Garena Shells</option>
+                        <option value="ROBLOX">Roblox</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Account ID / Username (Optional)</label>
+                    <input type="text" name="account_id" 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg input-focus"
+                        placeholder="Your game account ID">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Amount (₱)</label>
+                    <select name="amount" required class="w-full px-3 py-2 border border-gray-300 rounded-lg input-focus">
+                        <option value="">-- Select Amount --</option>
+                        <option value="50">₱50</option>
+                        <option value="100">₱100</option>
+                        <option value="200">₱200</option>
+                        <option value="500">₱500</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn w-full bg-primary text-white hover:bg-primary/90">
+                    <i class="fa-solid fa-credit-card mr-2"></i> Purchase Game PIN
+                </button>
+            </form>
+        </div>
+
+        <!-- Tab Content: Bills Payment -->
+        <div id="tab-bills" class="tab-content card hidden">
+            <h2 class="text-lg font-semibold mb-4">Pay Bills</h2>
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+                <i class="fa-solid fa-triangle-exclamation text-amber-500 mr-2"></i>
+                <span class="text-sm text-amber-800">Bills Payment requires ECPay or DafoxTech accreditation. Apply first to enable this feature.</span>
+            </div>
+            <form id="bills-form" class="space-y-4 opacity-60 pointer-events-none">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Biller / Provider</label>
+                    <select name="biller_code" required class="w-full px-3 py-2 border border-gray-300 rounded-lg input-focus">
+                        <option value="">-- Select Biller --</option>
+                        <option value="MERALCO">Meralco</option>
+                        <option value="MAYNILAD">Maynilad Water</option>
+                        <option value="PLDT">PLDT Internet</option>
+                        <option value="GLOBE_BILL">Globe Postpaid</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Account / Reference Number</label>
+                    <input type="text" name="account_number" required 
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg input-focus"
+                        placeholder="123456789">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Amount (₱)</label>
+                    <input type="number" name="amount" required min="100" step="10"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg input-focus"
+                        placeholder="Enter amount">
+                </div>
+                <button type="submit" class="btn w-full bg-gray-400 text-white cursor-not-allowed">
+                    <i class="fa-solid fa-lock mr-2"></i> Pending Provider Approval
+                </button>
+            </form>
+        </div>
+
+        <!-- Tab Content: Transaction History -->
+        <div id="tab-transactions" class="tab-content card hidden">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold">Transaction History</h2>
+                <button onclick="loadTransactions()" class="btn text-sm border border-gray-200 hover:bg-gray-50">
+                    <i class="fa-solid fa-rotate-right mr-1"></i> Refresh
+                </button>
+            </div>
+            <div id="transactions-list" class="space-y-3 text-sm">
+                <p class="text-gray-500 text-center py-4">Click Refresh to load transactions...</p>
+            </div>
+        </div>
+
+        <!-- Result / Response Panel -->
+        <div id="result-panel" class="card hidden">
+            <h3 class="text-sm font-semibold text-gray-600 mb-2">
+                <i class="fa-solid fa-server mr-1"></i> API Response
+            </h3>
+            <div id="result-content" class="bg-gray-900 text-green-400 p-3 rounded-lg text-xs font-mono whitespace-pre-wrap overflow-x-auto max-h-64"></div>
+        </div>
+    </main>
+
+    <footer class="text-center text-xs text-gray-500 py-6 mt-10">
+        <p>StoreFlow POS & Services Portal</p>
+        <p>Your Cloudflare Worker API powers this interface</p>
+    </footer>
+
+    <script>
+        let API_BASE = localStorage.getItem('apiBaseUrl') || '';
+
+        // Initialize
+        document.getElementById('api-base-url').value = API_BASE;
+        updateApiStatus();
+
+        function saveApiUrl() {
+            API_BASE = document.getElementById('api-base-url').value.trim();
+            localStorage.setItem('apiBaseUrl', API_BASE);
+            updateApiStatus();
+            alert('API URL saved!');
+        }
+
+        async function updateApiStatus() {
+            const statusEl = document.getElementById('api-status');
+            if (!API_BASE) {
+                statusEl.innerHTML = '<i class="fa-solid fa-circle text-gray-400"></i> No API URL set';
+                return;
+            }
+            try {
+                const res = await fetch(API_BASE + '/');
+                const data = await res.json();
+                if (data.status && data.status.includes('Running')) {
+                    statusEl.innerHTML = '<i class="fa-solid fa-circle-check text-success"></i> API Connected';
+                } else {
+                    statusEl.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-amber-500"></i> API Responding';
+                }
+            } catch (e) {
+                statusEl.innerHTML = '<i class="fa-solid fa-circle-xmark text-danger"></i> Connection Failed';
+            }
+        }
+
+        // Tabs
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('active', 'border-primary', 'text-primary');
+                    b.classList.add('border-transparent', 'text-gray-500');
+                });
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+                
+                btn.classList.add('active', 'border-primary', 'text-primary');
+                btn.classList.remove('border-transparent', 'text-gray-500');
+                document.getElementById('tab-' + btn.dataset.tab).classList.remove('hidden');
+                
+                if (btn.dataset.tab === 'transactions') loadTransactions();
+            });
+        });
+
+        function showResult(data, isError = false) {
+            const panel = document.getElementById('result-panel');
+            const content = document.getElementById('result-content');
+            panel.classList.remove('hidden');
+            content.style.color = isError ? '#f87171' : '#4ade80';
+            content.textContent = JSON.stringify(data, null, 2);
+            panel.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function loadTransactions() {
+            if (!API_BASE) {
+                alert('Please set your API Base URL first');
+                return;
+            }
+            const list = document.getElementById('transactions-list');
+            list.innerHTML = '<p class="text-center py-4 text-gray-500"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</p>';
+            
+            try {
+                const res = await fetch(API_BASE + '/transactions');
+                const data = await res.json();
+                showResult(data);
+                
+                if (data.success && data.data.length > 0) {
+                    list.innerHTML = data.data.map(tx => `
+                        <div class="border border-gray-100 rounded-lg p-3 ${tx.status === 'success' ? 'bg-green-50' : tx.status === 'failed' ? 'bg-red-50' : 'bg-gray-50'}">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <span class="font-medium">${tx.service_provider} — ${tx.service_type.replace('_', ' ')}</span>
+                                    <p class="text-gray-500 text-xs">${tx.recipient_number} — ₱${tx.amount}</p>
+                                </div>
+                                <span class="text-xs px-2 py-0.5 rounded-full ${tx.status === 'success' ? 'bg-green-100 text-green-700' : tx.status === 'failed' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}">${tx.status}</span>
+                            </div>
+                            <p class="text-xs text-gray-400 mt-1">${tx.created_at}</p>
+                        </div>
+                    `).join('');
+                } else {
+                    list.innerHTML = '<p class="text-gray-500 text-center py-4">No transactions yet.</p>';
+                }
+            } catch (err) {
+                list.innerHTML = `<p class="text-red-500 text-center py-4">Error: ${err.message}</p>`;
+                showResult({ error: err.message }, true);
+            }
+        }
+
+        // Forms
+        document.getElementById('load-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!API_BASE) { alert('Set API URL first!'); return; }
+            
+            const formData = new FormData(e.target);
+            const payload = {
+                network: formData.get('network'),
+                amount: parseFloat(formData.get('amount')),
+                phone_number: formData.get('phone_number')
+            };
+
+            try {
+                const res = await fetch(API_BASE + '/gbits/load-buy', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                showResult(data, !data.success);
+                if (data.success) e.target.reset();
+            } catch (err) {
+                showResult({ error: err.message }, true);
+            }
+        });
+
+        document.getElementById('game-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!API_BASE) { alert('Set API URL first!'); return; }
+            
+            const formData = new FormData(e.target);
+            const payload = {
+                game_code: formData.get('game_code'),
+                amount: parseFloat(formData.get('amount')),
+                account_id: formData.get('account_id') || null
+            };
+
+            try {
+                const res = await fetch(API_BASE + '/gbits/game-pin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                showResult(data, !data.success);
+                if (data.success) e.target.reset();
+            } catch (err) {
+                showResult({ error: err.message }, true);
+            }
+        });
+    </script>
+</body>
+</html>
